@@ -1,6 +1,7 @@
 from urlparse import urljoin
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.forms import Media, Textarea
 from django.utils.safestring import mark_safe
 from django.utils import simplejson as json
@@ -118,3 +119,34 @@ class AdminRedactorEditor(RedactorEditor):
             ]
         }
         return Media(css=css, js=js)
+
+
+class AdminRedactorEditorEx(AdminRedactorEditor):
+    """
+    Customize AdminRedactorEditor
+    """
+
+    def __init__(self, attrs=None, redactor_css=None, redactor_settings=None, include_jquery=True):
+        REDACTOR_IMAGE_UPLOAD = getattr(settings, "REDACTOR_IMAGE_UPLOAD", reverse('redactor-upload-image'))
+        REDACTOR_FILE_UPLOAD = getattr(settings, "REDACTOR_FILE_UPLOAD", reverse('redactor-upload-file'))
+        REDACTOR_IMAGE_GET_JSON = getattr(settings, "REDACTOR_IMAGE_GET_JSON", reverse('redactor-get-json'))
+        REDACTOR_DIRS_GET_JSON = getattr(settings, "REDACTOR_DIRS_GET_JSON", reverse('redactor-get-folders'))
+        params_settings = dict(
+            imageUpload=REDACTOR_IMAGE_UPLOAD,
+            fileUpload=REDACTOR_FILE_UPLOAD,
+            imageGetJson=REDACTOR_IMAGE_GET_JSON,
+            dirsGetJson=REDACTOR_DIRS_GET_JSON,
+            observeImages=False
+        )
+        if redactor_settings:
+            params_settings.update(redactor_settings)
+        super(AdminRedactorEditorEx, self).__init__(attrs, redactor_css, params_settings, include_jquery)
+
+    @property
+    def media(self):
+        REDACTOR_CSS = getattr(settings, "REDACTOR_CSS", settings.STATIC_URL + "css/redactor_api.css")
+        media = super(AdminRedactorEditorEx, self).media
+        media._js = map(
+            lambda x: x if not 'redactor.min.js' else x.replace("redactor.min.js", "redactor.js"), media._js)
+        media._css["screen"].append(REDACTOR_CSS)
+        return media
