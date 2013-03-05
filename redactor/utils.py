@@ -30,6 +30,7 @@ def get_image_folders(folder):
     root, dirs, files = os.walk(browse_path).next()
     return dirs
 
+
 def get_image_files(user=None, folder=""):
     """
     Recursively walks all dirs under upload dir and generates a list of
@@ -45,6 +46,10 @@ def get_image_files(user=None, folder=""):
     root, dirs, files = os.walk(browse_path).next()
     media_root = settings.MEDIA_URL + folder
     for filename in [os.path.join(media_root, x) for x in files]:
+        tokens = filename.split(".")
+        ext = tokens[len(tokens) - 1]
+        if ext not in ["jpg", "jpeg", "gif", "png", "svg", "ico"]:
+            continue
         yield dict(
             thumb=filename,
             image=filename,

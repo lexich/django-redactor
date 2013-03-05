@@ -220,7 +220,7 @@ var RLANG = {
 					'</div>' +
 					'<div id="redactor_tab2" class="redactor_tab" style="display: none;">' +
 						'<div id="redactor_image_box"></div>' +
-            '<div id="redactor_folder_container_div"><label>Папка</label><input id="redactor_folder_container_path" name="rootfolder" value=""/>'+
+            '<div id="redactor_folder_container_div"><label>Папка</label><input id="redactor_folder_container_path" disabled=disabled name="rootfolder" value=""/>'+
             '<select id="redactor_folder_container"></select></div>'+
 					'</div>' +
 				'</form>' +
