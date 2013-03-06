@@ -4,7 +4,7 @@ from os import path
 from distutils.core import setup
 
 
-version = '1.2.2'
+version = '1.2.2-1'
 
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -25,7 +25,7 @@ long_desc = open(root_dir + '/README.rst').read()
 setup(
     name='django-redactor',
     version=version,
-    url='http://github.com/mazelife/django-redactor/',
+    url='https://github.com/lexich/django-redactor',
     author='James Stevenson',
     author_email='james.m.stevenson at gmail dot com',
     license='CC licence, see LICENSE.txt',

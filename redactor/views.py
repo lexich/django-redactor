@@ -1,9 +1,10 @@
 import json
+from django.contrib.auth.decorators import login_required
 
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
-from redactor.forms import ImageUploadForm, FileUploadForm
-from redactor.utils import get_image_files, get_image_folders
+from forms import ImageUploadForm, FileUploadForm
+from utils import get_image_files, get_image_folders, get_relpath_or_404
 
 
 def json_response(func):
@@ -21,8 +22,14 @@ def json_response(func):
 
 
 @csrf_exempt
+@login_required
 @json_response
 def upload_image(request):
+    """
+    Upload image
+    :param request: HTTP request
+    :return: json data in python dict
+    """
     if request.method == 'POST':
         form = ImageUploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -32,8 +39,14 @@ def upload_image(request):
 
 
 @csrf_exempt
+@login_required
 @json_response
 def upload_file(request):
+    """
+    Upload file
+    :param request: HTTP request
+    :return: json data in python dict
+    """
     if request.method == 'POST':
         form = FileUploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -45,17 +58,27 @@ def upload_file(request):
     return {}
 
 
+@login_required
 @json_response
-def get_json(request):
+def get_json_images(request):
+    """
+    Get list of image in {request.folder} folder
+    :param request: HTTP request
+    :return: json data in python dict
+    """
     root = request.GET.get("folder", "")
     root = root.replace("..", "")
     root = root[1:] if root.startswith("/") else root
-    return [meta for meta in get_image_files(request.user, root)]
+    return [meta for meta in get_image_files(root)]
 
 
+@login_required
 @json_response
 def get_folders(request):
-    root = request.GET.get("folder", "")
-    root = root.replace("..", "")
-    root = root[1:] if root.startswith("/") else root
+    """
+    Get list of folders in {request.folder} folder
+    :param request: HTTP request
+    :return: json data in python dict
+    """
+    root = get_relpath_or_404(request.GET.get("folder", ""))
     return get_image_folders(root)

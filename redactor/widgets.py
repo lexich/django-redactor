@@ -64,11 +64,11 @@ class RedactorEditor(Textarea):
 
     def _get_js_media(self):
         js = (
-            'django-redactor/redactor/redactor.min.js',
+            'django-redactor/redactor/redactor.js',
             'django-redactor/redactor/setup.js',
         )
         if self.include_jquery:
-            js = ('django-redactor/lib/jquery-1.7.min.js',) + js
+            js = ('redactor/lib/jquery-1.7.min.js',) + js
         return js
 
     def get_redactor_css_absolute_path(self, path):
@@ -88,7 +88,7 @@ class RedactorEditor(Textarea):
             js += ('django-redactor/redactor/langs/%s.js' % self.redactor_settings['lang'],)
         css = {
             'screen': [
-                'django-redactor/redactor/css/redactor.css',
+                'redactor/redactor/redactor.css',s
             ]
         }
         return Media(css=css, js=js)
@@ -114,7 +114,7 @@ class AdminRedactorEditor(RedactorEditor):
             js += ('django-redactor/redactor/langs/%s.js' % self.redactor_settings['lang'],)
         css = {
             'screen': [
-                'django-redactor/redactor/css/redactor.css',
+                'redactor/redactor/redactor.css',
                 'django-redactor/redactor/css/django_admin.css',
             ]
         }
@@ -131,12 +131,13 @@ class AdminRedactorEditorEx(AdminRedactorEditor):
         REDACTOR_FILE_UPLOAD = getattr(settings, "REDACTOR_FILE_UPLOAD", reverse('redactor-upload-file'))
         REDACTOR_IMAGE_GET_JSON = getattr(settings, "REDACTOR_IMAGE_GET_JSON", reverse('redactor-get-json'))
         REDACTOR_DIRS_GET_JSON = getattr(settings, "REDACTOR_DIRS_GET_JSON", reverse('redactor-get-folders'))
+        REDACTOR_LANG = getattr(settings, "REDACTOR_LANG", "ru")
         params_settings = dict(
             imageUpload=REDACTOR_IMAGE_UPLOAD,
             fileUpload=REDACTOR_FILE_UPLOAD,
             imageGetJson=REDACTOR_IMAGE_GET_JSON,
             dirsGetJson=REDACTOR_DIRS_GET_JSON,
-            observeImages=False
+            lang=REDACTOR_LANG
         )
         if redactor_settings:
             params_settings.update(redactor_settings)
@@ -144,9 +145,11 @@ class AdminRedactorEditorEx(AdminRedactorEditor):
 
     @property
     def media(self):
-        REDACTOR_CSS = getattr(settings, "REDACTOR_CSS", settings.STATIC_URL + "css/redactor_api.css")
+        REDACTOR_CSS = getattr(settings, "REDACTOR_CSS",None)
         media = super(AdminRedactorEditorEx, self).media
         media._js = map(
             lambda x: x if not 'redactor.min.js' else x.replace("redactor.min.js", "redactor.js"), media._js)
-        media._css["screen"].append(REDACTOR_CSS)
+        if REDACTOR_CSS:
+            media._css["screen"].append(REDACTOR_CSS)
+        print(media)
         return media

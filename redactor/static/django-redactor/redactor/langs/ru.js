@@ -62,5 +62,6 @@ RELANG['ru'] = {
 	horizontalrule: 'Горизонтальная линейка',
 	fullscreen: 'Во весь экран',
 	deleted: 'Зачеркнутый',
-	anchor: 'Якорь'									
+	anchor: 'Якорь',
+  folder: 'Папка'
 };

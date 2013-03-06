@@ -1,10 +1,13 @@
 import unittest
+import os
 from urlparse import urljoin
 
 from django import forms
 from django.conf import settings
+from django.http import Http404
 
 from redactor import fields, widgets
+import utils
 
 
 class MyForm(forms.Form):
@@ -43,7 +46,6 @@ class NoJqueryForm(forms.Form):
 
 
 class RedactorTests(unittest.TestCase):
-
     def test_field_rendering(self):
         """
         Ensure a widget and a field render the same way.
@@ -96,3 +98,19 @@ class RedactorTests(unittest.TestCase):
         yes_jquery_form = MyForm()
         jq_scripts = filter(lambda s: "django-redactor/lib/jquery-1.7.min.js" in s, yes_jquery_form.media.render_js())
         self.assertTrue(len(jq_scripts) == 1)
+
+
+class TestUtils(unittest.TestCase):
+    def test_get_abspath_or_404(self):
+        self.assertRaises(Http404, utils.get_abspath_or_404, ("/test", settings.MEDIA_ROOT))
+        self.assertRaises(Http404, utils.get_abspath_or_404,
+                          (os.path.join(settings.MEDIA_ROOT, "..", "test"), settings.MEDIA_ROOT))
+        path = os.path.join(settings.MEDIA_ROOT, "test")
+        self.assertEqual(path, utils.get_abspath_or_404(path, settings.MEDIA_ROOT))
+
+    def test_get_relpath_or_404(self):
+        self.assertRaises(Http404, utils.get_relpath_or_404, ("/test", settings.MEDIA_ROOT))
+        self.assertRaises(Http404, utils.get_relpath_or_404,
+                          (os.path.join(settings.MEDIA_ROOT, "..", "test"), settings.MEDIA_ROOT))
+        path = os.path.join(settings.MEDIA_ROOT, "test")
+        self.assertEqual("test", utils.get_abspath_or_404(path, settings.MEDIA_ROOT))

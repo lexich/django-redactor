@@ -1,9 +1,11 @@
 import os
 from datetime import datetime
 from django.conf import settings
-
+from django.http import Http404
 
 REDACTOR_API_ROOT_FOLDER = getattr(settings, "REDACTOR_API_ROOT_FOLDER", "redactor_api")
+REDACTOR_IMAGES_EXT = getattr(settings, "REDACTOR_IMAGES_EXT", ["jpg", "jpeg", "gif", "png", "svg", "ico"])
+REDACTOR_FILES_EXT = getattr(settings, "REDACTOR_FILES_EXT", ["rtf", "doc", "docx", "xml", "pfd", "odt"])
 
 
 def get_root_path(folder_name=""):
@@ -31,16 +33,7 @@ def get_image_folders(folder):
     return dirs
 
 
-def get_image_files(user=None, folder=""):
-    """
-    Recursively walks all dirs under upload dir and generates a list of
-    full paths for each file found.
-    """
-    if user and not user.is_superuser:
-        user_path = user.username
-    else:
-        user_path = ''
-
+def get_image_files(folder=""):
     browse_path = os.path.join(settings.MEDIA_ROOT, folder)
     folder = folder[1:] if folder.startswith("/") else folder
     root, dirs, files = os.walk(browse_path).next()
@@ -48,7 +41,7 @@ def get_image_files(user=None, folder=""):
     for filename in [os.path.join(media_root, x) for x in files]:
         tokens = filename.split(".")
         ext = tokens[len(tokens) - 1]
-        if ext not in ["jpg", "jpeg", "gif", "png", "svg", "ico"]:
+        if ext not in REDACTOR_IMAGES_EXT:
             continue
         yield dict(
             thumb=filename,
@@ -65,3 +58,45 @@ def get_file_path(name, root_path):
         counter += 1
     path = os.path.join(root_path, clone, name)
     return clone + name, path
+
+
+def normalize_path(path, root):
+    """
+    Normalizing path
+    :param path: path to file
+    :param root: root folder
+    :return: normalizing path
+    """
+    if path.startswith("/") or path == "":
+        path = u".%s" % path
+    path = os.path.join(root, path)
+    return path
+
+
+def get_abspath_or_404(path, root=settings.MEDIA_ROOT):
+    """
+    Get absolute path and protection from transversal directory attack
+    :param path: path to file
+    :param root: root folder
+    :return: absolute path
+    """
+    path = normalize_path(path, root)
+    if ".." in os.path.relpath(path, root):
+        raise Http404()
+    return os.path.abspath(path)
+
+
+def get_relpath_or_404(path, root=settings.MEDIA_ROOT):
+    """
+    Get relative path and protection from transversal directory attack
+    :param path: path to file
+    :param root: root folder
+    :return: relative path
+    """
+    path = normalize_path(path, root)
+    relpath = os.path.relpath(path, root)
+    if ".." in relpath:
+        raise Http404()
+    return relpath
+
+

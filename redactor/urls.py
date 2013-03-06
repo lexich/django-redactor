@@ -14,7 +14,7 @@ urlpatterns = patterns(
         name="redactor-upload-file"),
 
     url(r'^getjson',
-        views.get_json,
+        views.get_json_images,
         name="redactor-get-json"),
 
     url(r'^getfolders',
