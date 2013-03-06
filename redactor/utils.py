@@ -29,7 +29,10 @@ def handle_uploaded_file(f, path):
 def get_image_folders(folder):
     folder = folder[1:] if folder.startswith("/") else folder
     browse_path = os.path.join(settings.MEDIA_ROOT, folder)
-    root, dirs, files = os.walk(browse_path).next()
+    try:
+        root, dirs, files = os.walk(browse_path).next()
+    except Exception, e:
+        raise Http404()
     return dirs
 
 
