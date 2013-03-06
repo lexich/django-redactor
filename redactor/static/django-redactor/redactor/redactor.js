@@ -81,7 +81,8 @@ var RLANG = {
 	horizontalrule: 'Insert Horizontal Rule',
 	deleted: 'Deleted',
 	anchor: 'Anchor',
-	link_new_tab: 'Open link in new tab'
+	link_new_tab: 'Open link in new tab',
+  folder: "Folder"
 };
 
 (function($){
@@ -232,9 +233,8 @@ var RLANG = {
 						'<input type="file" id="redactor_file" name="file" />' +
 					'</div>' +
 					'<div id="redactor_tab2" class="redactor_tab" style="display: none;">' +
-						'<div id="redactor_image_box"></div>' +
-            '<div id="redactor_folder_container_div"><label>Папка</label><input id="redactor_folder_container_path" disabled=disabled name="rootfolder" value=""/>'+
-            '<select id="redactor_folder_container"></select></div>'+
+						'<p>' + RLANG.folder + ': <span id="redactor_folder_container_path" data-value="/">/</span></p>'+
+            '<div id="redactor_image_box"></div>' +
 					'</div>' +
 				'</form>' +
 				'<div id="redactor_tab3" class="redactor_tab" style="display: none;">' +
@@ -2375,7 +2375,7 @@ var RLANG = {
 		imageSave: function(el)
 		{
 			var parent = $(el).parent();
-
+	
 			$(el).attr('alt', $('#redactor_file_alt').val());
 	
 			var floating = $('#redactor_form_image_align').val();
@@ -2413,179 +2413,194 @@ var RLANG = {
 					$(parent).replaceWith(this.outerHTML(el));
 				}
 			}
-
+	
 			this.modalClose();
 			this.observeImages();
 			this.syncCode();
 			
 		},
-    curPath:function(val){
-      var process = function(val){
-        if(val){
-          val = val.replace("//","/");
-          if(val.indexOf("/")==0){
-            val = val.slice(1,val.length);
-          }
-        }
-        return val;
-      };
-      var $item = $("#redactor_folder_container_path");
-      if(val){
-        val = process(val);
-        $item.val(val)
-      } else{
-        var res = $item.val();
-        return process(res);
+    processPath:function(path){
+      if(!path){
+        path = "/"
+      }
+      path = path.replace("//","/");
+      if(path[0]!="/" || path==""){
+        path = "/" +path
+      }
+      if(path[path.length-1]!="/"){
+        path += "/"
+      }
+      return path
+    },
+    backCurPath:function(){
+      var tokens = this.curPath().split("/");
+      tokens = tokens.slice(1,tokens.length-1);
+      if(tokens.length > 0){
+        return "/" + tokens.slice(0,tokens.length-1).join("/") + "/";
+      } else {
+        return '/';
       }
     },
-    hookGetJson:function(path){
-      var sep = path.indexOf("?")==-1 ? "?" : "&";
-      return path + sep + "folder=" + this.curPath();
+		curPath:function(val){
+		  var $item = $("#redactor_folder_container_path");
+		  if(val){
+        val = this.processPath(val)
+		    $item.data("value",val);
+        $item.text(val);
+		  } else{
+		    return this.processPath($item.data("value"));
+		  }
+		},
+		hookGetJson:function(path){
+		  var sep = path.indexOf("?")==-1 ? "?" : "&";
+		  return path + sep + "folder=" + this.curPath();
+		},
+    showFolders: function(){
+      if(this.opts.dirsGetJson !== false){
+        $.getJSON(this.hookGetJson(this.opts.dirsGetJson), $.proxy(function(data){
+          var $container = $('<div id="redactor_image_folders"/>');
+          var createLink = $.proxy(function(path, text){
+            var $link = $('<a href="javascript:void(0); data-value=' + path + '">');
+            $link.html('<div class="redactor_folder"><p class="redactor_folder_text">' + text + '</p></div>');
+            $link.click($.proxy(function(e){
+              e.preventDefault();
+              this.curPath( path);
+              this.imageHandler();
+            },this));
+            return $link;
+          }, this);
+          $container.append(createLink("/","..."));
+          $container.append(createLink(this.backCurPath(), "&lArr;"));
+          $.each(data, $.proxy(function(key,val){
+            var path = this.curPath() + val + "/";
+            $container.append(createLink(path, val));
+          }, this));
+          $container.append("<hr>");
+          $("#redactor_image_box").prepend($container)
+        }, this));
+      }
+    },
+    imageHandler: function()
+    {
+      // json
+      if (this.opts.imageGetJson !== false)
+      {
+        $('#redactor_image_box').empty();
+        $.getJSON(this.hookGetJson(this.opts.imageGetJson), $.proxy(function(data) {
+          var folders = {};
+          var z = 0;
+
+          // folders
+          $.each(data, $.proxy(function(key, val)
+          {
+            if (typeof val.folder !== 'undefined')
+            {
+              z++;
+              folders[val.folder] = z;
+            }
+
+          }, this));
+
+          var folderclass = false;
+          $.each(data, $.proxy(function(key, val)
+          {
+            // title
+            var thumbtitle = '';
+            if (typeof val.title !== 'undefined')
+            {
+              thumbtitle = val.title;
+            }
+
+            var folderkey = 0;
+            if (!$.isEmptyObject(folders) && typeof val.folder !== 'undefined')
+            {
+              folderkey = folders[val.folder];
+              if (folderclass === false)
+              {
+                folderclass = '.redactorfolder' + folderkey;
+              }
+            }
+
+            var img = $('<img src="' + val.thumb + '" class="redactorfolder redactorfolder' + folderkey + '" rel="' + val.image + '" title="' + thumbtitle + '" />');
+            $('#redactor_image_box').append(img);
+            $(img).click($.proxy(this.imageSetThumb, this));
+
+
+          }, this));
+
+          // folders
+           /*
+           if (!$.isEmptyObject(folders))
+           {
+             $('.redactorfolder').hide();
+             $(folderclass).show();
+
+             var onchangeFunc = function(e)
+             {
+               $('.redactorfolder').hide();
+               $('.redactorfolder' + $(e.target).val()).show();
+             }
+
+             var select = $('<select id="redactor_image_box_select">');
+             $.each(folders, function(k,v){
+              select.append($('<option value="' + v + '">' + k + '</option>'));
+             });
+             $('#redactor_image_box').before(select);
+             select.change(onchangeFunc);
+           }*/
+
+
+        }, this));
+      }
+      else
+      {
+        $('#redactor_tabs a').eq(1).remove();
+      }
+      if (this.opts.imageUpload !== false)
+      {
+
+        // dragupload
+        if (this.opts.uploadCrossDomain === false && this.isMobile() === false)
+        {
+
+          if ($('#redactor_file').size() !== 0)
+          {
+            $('#redactor_file').dragupload(
+              {
+                url: this.opts.imageUpload,
+                uploadFields: this.opts.uploadFields,
+                success: $.proxy(this.imageUploadCallback, this)
+              });
+          }
+        }
+
+        // ajax upload
+        this.uploadInit('redactor_file', { auto: true, url: this.opts.imageUpload, success: $.proxy(this.imageUploadCallback, this)  });
+      }
+      else
+      {
+        $('.redactor_tab').hide();
+        if (this.opts.imageGetJson === false)
+        {
+          $('#redactor_tabs').remove();
+          $('#redactor_tab3').show();
+        }
+        else
+        {
+          var tabs = $('#redactor_tabs a');
+          tabs.eq(0).remove();
+          tabs.eq(1).addClass('redactor_tabs_act');
+          $('#redactor_tab2').show();
+        }
+      }
+      $('#redactor_upload_btn').click($.proxy(this.imageUploadCallbackLink, this));
+      this.showFolders();
     },
 		showImage: function()
 		{
 			this.saveSelection();
 	
-			var handler = $.proxy(function()
-			{
-				// json
-				if (this.opts.imageGetJson !== false)
-				{
-					$.getJSON(this.hookGetJson(this.opts.imageGetJson), $.proxy(function(data) {
-            $('#redactor_image_box').empty();
-						$.each(data, $.proxy(function(key, val)
-						{
-							if (typeof val.folder !== 'undefined')
-							{
-								z++;
-								folders[val.folder] = z;							
-							}
-												
-						}, this));
-						
-						var folderclass = false;
-						$.each(data, $.proxy(function(key, val)
-						{
-							// title
-							var thumbtitle = '';
-							if (typeof val.title !== 'undefined')
-							{
-								thumbtitle = val.title;
-							}
-							
-							var folderkey = 0;						
-							if (!$.isEmptyObject(folders) && typeof val.folder !== 'undefined')
-							{
-								folderkey = folders[val.folder];
-								if (folderclass === false)
-								{
-									folderclass = '.redactorfolder' + folderkey;
-								}
-							}
-							
-							var img = $('<img src="' + val.thumb + '" class="redactorfolder redactorfolder' + folderkey + '" rel="' + val.image + '" title="' + thumbtitle + '" />');
-							$('#redactor_image_box').append(img);
-							$(img).click($.proxy(this.imageSetThumb, this));
-							
-							
-						}, this));
-
-						// folders
-						if (!$.isEmptyObject(folders))
-						{
-							$('.redactorfolder').hide();
-							$(folderclass).show();
-												
-							var onchangeFunc = function(e)
-							{
-								$('.redactorfolder').hide();
-								$('.redactorfolder' + $(e.target).val()).show();
-							}
-						
-							var select = $('<select id="redactor_image_box_select">');
-							$.each(folders, function(k,v)
-							{
-								select.append($('<option value="' + v + '">' + k + '</option>'));
-							});
-							
-							$('#redactor_image_box').before(select);
-							select.change(onchangeFunc);
-						}
-	
-					}, this));
-				}
-				else
-				{
-					$('#redactor_tabs a').eq(1).remove();
-				}
-
-        if(this.opts.dirsGetJson !== false){
-          var curPath = this.curPath();
-          var $container = $('#redactor_folder_container');
-          $.getJSON(this.hookGetJson(this.opts.dirsGetJson), $.proxy(function(data){
-            $container.empty();
-            var createLink = $.proxy(function(path, text){
-              return $('<option>').val(path).text(text);
-            }, this);
-            $container.append(createLink("",""));
-            $container.append(createLink("/","Корень"));
-            var tokens = curPath.split("/");
-            var back = tokens.length>1 ? tokens.slice(0,tokens.length-1).join("/") : "/";
-            $container.append(createLink(back, "Назад"));
-            $.each(data, $.proxy(function(key,val){
-              var path = this.curPath() + "/" + val;
-              $container.append(createLink(path,path));
-            }, this));
-
-          }, this));
-        }
-
-				if (this.opts.imageUpload !== false)
-				{
-					
-					// dragupload
-					if (this.opts.uploadCrossDomain === false && this.isMobile() === false)
-					{
-						
-						if ($('#redactor_file').size() !== 0)
-						{
-							$('#redactor_file').dragupload(
-							{
-								url: this.opts.imageUpload,
-								uploadFields: this.opts.uploadFields,
-								success: $.proxy(this.imageUploadCallback, this)
-							});
-						}
-					}
-	
-					// ajax upload
-					this.uploadInit('redactor_file', { auto: true, url: this.opts.imageUpload, success: $.proxy(this.imageUploadCallback, this)  });
-				}
-				else
-				{
-					$('.redactor_tab').hide();
-					if (this.opts.imageGetJson === false) 
-					{
-						$('#redactor_tabs').remove();
-						$('#redactor_tab3').show();
-					}
-					else 
-					{
-						var tabs = $('#redactor_tabs a');
-						tabs.eq(0).remove();
-						tabs.eq(1).addClass('redactor_tabs_act');
-						$('#redactor_tab2').show();
-					}
-				}
-	
-				$('#redactor_upload_btn').click($.proxy(this.imageUploadCallbackLink, this));
-        $('#redactor_folder_container').change($.proxy(function(){
-          this.curPath( $('#redactor_folder_container').val());
-          $('#redactor_image_box').empty();
-          $('#redactor_folder_container').empty();
-          handler();
-        },this));
-			}, this);
+			var handler = $.proxy(this.imageHandler, this);
 			
 			var endCallback = $.proxy(function()
 			{
