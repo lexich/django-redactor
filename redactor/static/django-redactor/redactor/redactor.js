@@ -3260,107 +3260,114 @@ var RLANG = {
 	// Functionality
 	Construct.prototype = {
 		init: function()
-		{	
-			if (!$.browser.msie) 
-			{	
-				this.droparea = $('<div class="redactor_droparea"></div>');
-				this.dropareabox = $('<div class="redactor_dropareabox">' + this.opts.text + '</div>');	
-				this.dropalternative = $('<div class="redactor_dropalternative">' + this.opts.atext + '</div>');
-				
-				this.droparea.append(this.dropareabox);
-				
-				this.$el.before(this.droparea);
-				this.$el.before(this.dropalternative);
-
-				// drag over
-				this.dropareabox.bind('dragover', $.proxy(function() { return this.ondrag(); }, this));
-				
-				// drag leave
-				this.dropareabox.bind('dragleave', $.proxy(function() { return this.ondragleave(); }, this));
-		
-				var uploadProgress = $.proxy(function(e) 
-				{ 
-					var percent = parseInt(e.loaded / e.total * 100, 10);
-					this.dropareabox.text('Loading ' + percent + '%');
-					
-				}, this);
-		
-				var xhr = jQuery.ajaxSettings.xhr();
-				
-				if (xhr.upload)
-				{
-					xhr.upload.addEventListener('progress', uploadProgress, false);
-				}
-				
-				var provider = function () { return xhr; };
-		
-				// drop
-				this.dropareabox.get(0).ondrop = $.proxy(function(event)
-				{
-					event.preventDefault();
-					
-					this.dropareabox.removeClass('hover').addClass('drop');
-					
-					var file = event.dataTransfer.files[0];
-					var fd = new FormData();
-
-					// append hidden fields
-					if (this.opts.uploadFields !== false && typeof this.opts.uploadFields === 'object')
-					{
-						$.each(this.opts.uploadFields, $.proxy(function(k,v)
-						{					
-							if (v.indexOf('#') === 0)
-							{
-								v = $(v).val();
-							}
-							
-							fd.append(k, v);
-					
-						}, this));
-					}	
-					
-					// append file data
-					fd.append('file', file);
-					
-
-					$.ajax({
-						dataType: 'html',
-						url: this.opts.url,
-						data: fd,
-						xhr: provider,
-						cache: false,
-						contentType: false,
-						processData: false,
-						type: 'POST',
-						success: $.proxy(function(data)
-						{
-							if (this.opts.success !== false)
-							{
-								this.opts.success(data);
-							}
-							
-							if (this.opts.preview === true)
-							{
-								this.dropareabox.html(data);
-							}
-							
-						}, this)
-					});
-
-
-				}, this);
-			}
-		},
-		ondrag: function()
 		{
-			this.dropareabox.addClass('hover');
-			return false;
+			if ($.browser.msie) return;
+
+      this.droparea = $('<div class="redactor_droparea"></div>');
+      this.dropareabox = $('<div class="redactor_dropareabox">' + this.opts.text + '</div>');
+      this.dropalternative = $('<div class="redactor_dropalternative">' + this.opts.atext + '</div>');
+
+      this.droparea.append(this.dropareabox);
+      this.$el.before(this.droparea);
+      this.$el.before(this.dropalternative);
+
+      // drag over
+      this.dropareabox.bind('dragover', $.proxy(this.ondrag, this));
+      // drag leave
+      this.dropareabox.bind('dragleave', $.proxy(this.ondragleave, this));
+
+
+      this.xhr = jQuery.ajaxSettings.xhr();
+      if (this.xhr.upload)
+      {
+        this.xhr.upload.addEventListener('progress', $.proxy(this.uploadProgress, this), false);
+      }
+      // drop
+      this.dropareabox.get(0).ondrop = $.proxy(this.ondrop, this);
+
 		},
-		ondragleave: function()
-		{
-			this.dropareabox.removeClass('hover');
-			return false;
-		}
+    uploadProgress:function(e)
+    {
+      var percent = parseInt(e.loaded / e.total * 100, 10);
+      this.dropareabox.text('Loading ' + percent + '%');
+    },
+
+    ondrop:function(event)
+    {
+      event.preventDefault();
+
+      this.dropareabox.removeClass('hover').addClass('drop');
+
+      var files = event.dataTransfer.files;
+      var _this = this;
+      var ctxHolder = [];
+
+      var callback = function(data){
+        ctxHolder[ctxHolder.length] = data;
+        if(ctxHolder.length < files.length){
+          _this.uploadFile(ctxHolder.length, files, provider, callback);
+        } else {
+          $(ctxHolder).each(function(k, ctx){
+            if (_this.opts.success !== false)
+            {
+              _this.opts.success(ctx);
+            }
+            if (_this.opts.preview === true)
+            {
+              _this.dropareabox.append(ctx);
+            }
+          })
+        }
+      };
+      var provider = function () { return _this.xhr; };
+      _this.uploadFile(ctxHolder.length, files, provider, callback);
+
+    },
+    ondrag: function()
+    {
+      this.dropareabox.addClass('hover');
+      return false;
+    },
+    ondragleave: function()
+    {
+      this.dropareabox.removeClass('hover');
+      return false;
+    },
+    uploadFile: function(index, files, provider, successFunc){
+      var file = files[index];
+      var fd = new FormData();
+
+      // append hidden fields
+      if (this.opts.uploadFields !== false && typeof this.opts.uploadFields === 'object')
+      {
+        $.each(this.opts.uploadFields, $.proxy(function(k,v)
+        {
+          if (v.indexOf('#') === 0)
+          {
+            v = $(v).val();
+          }
+
+          fd.append(k, v);
+
+        }, this));
+      }
+
+      // append file data
+      fd.append('file', file);
+
+
+      $.ajax({
+        dataType: 'html',
+        url: this.opts.url,
+        data: fd,
+        xhr: provider,
+        cache: false,
+        contentType: false,
+        processData: false,
+        type: 'POST',
+        success: $.proxy(successFunc, this)
+      });
+    }
 	};
 
 })(jQuery);

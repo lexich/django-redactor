@@ -62,7 +62,7 @@ def get_file_path(name, root_path):
     while os.path.exists(os.path.join(root_path, clone + name)):
         clone = "%s" % counter
         counter += 1
-    path = os.path.join(root_path, clone, name)
+    path = os.path.join(root_path, clone + name)
     return clone + name, path
 
 
