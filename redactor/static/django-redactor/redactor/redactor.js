@@ -3316,7 +3316,8 @@ var RLANG = {
             {
               _this.dropareabox.append(ctx);
             }
-          })
+          });
+          ctxHolder = [];
         }
       };
       var provider = function () { return _this.xhr; };
