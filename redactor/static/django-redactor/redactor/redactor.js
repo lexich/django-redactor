@@ -2442,43 +2442,33 @@ var RLANG = {
       }
     },
 		curPath:function(val){
-		  var $item = $("#redactor_folder_container_path");
 		  if(val){
-        val = this.processPath(val)
-		    $item.data("value",val);
-        $item.text(val);
+        val = this.processPath(val);
+		    this.$el.data("image-value",val);
 		  } else{
-		    return this.processPath($item.data("value"));
+		    return this.processPath(this.$el.data("image-value"));
 		  }
 		},
 		hookGetJson:function(path){
 		  var sep = path.indexOf("?")==-1 ? "?" : "&";
 		  return path + sep + "folder=" + this.curPath();
 		},
-    showFolders: function(){
-      if(this.opts.dirsGetJson !== false){
-        $.getJSON(this.hookGetJson(this.opts.dirsGetJson), $.proxy(function(data){
-          var $container = $('<div id="redactor_image_folders"/>');
-          var createLink = $.proxy(function(path, text){
-            var $link = $('<a href="javascript:void(0); data-value=' + path + '">');
-            $link.html('<div class="redactor_folder"><p class="redactor_folder_text">' + text + '</p></div>');
-            $link.click($.proxy(function(e){
-              e.preventDefault();
-              this.curPath( path);
-              this.imageHandler();
-            },this));
-            return $link;
-          }, this);
-          $container.append(createLink("/","..."));
-          $container.append(createLink(this.backCurPath(), "&lArr;"));
-          $.each(data, $.proxy(function(key,val){
-            var path = this.curPath() + val + "/";
-            $container.append(createLink(path, val));
-          }, this));
-          $container.append("<hr>");
-          $("#redactor_image_box").prepend($container)
-        }, this));
-      }
+    renderFolder_createLink: function(path, text){
+      var $link = $('<a href="javascript:void(0); data-value=' + path + '">');
+      $link.html('<div class="redactor_folder"><p class="redactor_folder_text">' + text + '</p></div>');
+      $link.click($.proxy(function(e){
+        e.preventDefault();
+        this.curPath(path);
+        this.imageHandler();
+      },this));
+      return $link;
+    },
+    renderFolder:function(data,$separator){
+      if(data.type != 'dir') return false;
+      var path = this.curPath() + data.folder + "/";
+      var folderName = data.folderName || data.folder;
+      $separator.before(this.renderFolder_createLink(path, folderName));
+      return true;
     },
     imageHandler: function()
     {
@@ -2487,23 +2477,18 @@ var RLANG = {
       {
         $('#redactor_image_box').empty();
         $.getJSON(this.hookGetJson(this.opts.imageGetJson), $.proxy(function(data) {
+          $("#redactor_folder_container_path").text(this.curPath());
           var folders = {};
-          var z = 0;
+          var $separator = $("<hr/>");
+          $('#redactor_image_box').append($separator);
 
-          // folders
-          $.each(data, $.proxy(function(key, val)
-          {
-            if (typeof val.folder !== 'undefined')
-            {
-              z++;
-              folders[val.folder] = z;
-            }
-
-          }, this));
+          $separator.before(this.renderFolder_createLink("/","..."));
+          $separator.before(this.renderFolder_createLink(this.backCurPath(), "&lArr;"));
 
           var folderclass = false;
           $.each(data, $.proxy(function(key, val)
           {
+            if(this.renderFolder(val, $separator)) return;
             // title
             var thumbtitle = '';
             if (typeof val.title !== 'undefined')
@@ -2527,29 +2512,6 @@ var RLANG = {
 
 
           }, this));
-
-          // folders
-           /*
-           if (!$.isEmptyObject(folders))
-           {
-             $('.redactorfolder').hide();
-             $(folderclass).show();
-
-             var onchangeFunc = function(e)
-             {
-               $('.redactorfolder').hide();
-               $('.redactorfolder' + $(e.target).val()).show();
-             }
-
-             var select = $('<select id="redactor_image_box_select">');
-             $.each(folders, function(k,v){
-              select.append($('<option value="' + v + '">' + k + '</option>'));
-             });
-             $('#redactor_image_box').before(select);
-             select.change(onchangeFunc);
-           }*/
-
-
         }, this));
       }
       else
@@ -2594,7 +2556,6 @@ var RLANG = {
         }
       }
       $('#redactor_upload_btn').click($.proxy(this.imageUploadCallbackLink, this));
-      this.showFolders();
     },
 		showImage: function()
 		{
