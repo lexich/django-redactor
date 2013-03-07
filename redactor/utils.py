@@ -42,7 +42,7 @@ def get_image_files(folder=""):
     root, dirs, files = os.walk(browse_path).next()
     media_root = settings.MEDIA_URL + folder
     for dir in dirs:
-        yield dict(type="dir", folder=folder + dir, folderName=dir)
+        yield dict(type="dir", folder=dir, folderName=dir)
     for filename in [os.path.join(media_root, x) for x in files]:
         tokens = filename.split(".")
         ext = tokens[len(tokens) - 1]

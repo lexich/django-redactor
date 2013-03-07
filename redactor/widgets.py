@@ -64,7 +64,7 @@ class RedactorEditor(Textarea):
 
     def _get_js_media(self):
         js = (
-            'redactor/redactor/redactor.js',
+            'django-redactor/redactor/redactor.js',
             'django-redactor/redactor/setup.js',
         )
         if self.include_jquery:
