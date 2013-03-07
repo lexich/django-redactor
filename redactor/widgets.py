@@ -64,7 +64,7 @@ class RedactorEditor(Textarea):
 
     def _get_js_media(self):
         js = (
-            'django-redactor/redactor/redactor.js',
+            'redactor/redactor/redactor.js',
             'django-redactor/redactor/setup.js',
         )
         if self.include_jquery:
@@ -86,7 +86,7 @@ class RedactorEditor(Textarea):
     def media(self):
         js = self._get_js_media()
         if self.redactor_settings['lang'] != 'en':
-            js += ('django-redactor/redactor/langs/%s.js' % self.redactor_settings['lang'],)
+            js += ('redactor/redactor/langs/%s.js' % self.redactor_settings['lang'],)
         css = {
             'screen': [
                 'redactor/redactor/redactor.css',
@@ -112,11 +112,11 @@ class AdminRedactorEditor(RedactorEditor):
     def media(self):
         js = self._get_js_media()
         if self.redactor_settings['lang'] != 'en':
-            js += ('django-redactor/redactor/langs/%s.js' % self.redactor_settings['lang'],)
+            js += ('redactor/redactor/langs/%s.js' % self.redactor_settings['lang'],)
         css = {
             'screen': [
                 'redactor/redactor/redactor.css',
-                'django-redactor/redactor/css/django_admin.css',
+                'django-redactor/redactor/django_admin.css',
             ]
         }
         return Media(css=css, js=js)
@@ -146,8 +146,6 @@ class AdminRedactorEditorEx(AdminRedactorEditor):
     def media(self):
         REDACTOR_CSS = getattr(settings, "REDACTOR_CSS",None)
         media = super(AdminRedactorEditorEx, self).media
-        media._js = map(
-            lambda x: x if not 'redactor.min.js' else x.replace("redactor.min.js", "redactor.js"), media._js)
         if REDACTOR_CSS:
             media._css["screen"].append(REDACTOR_CSS)
         print(media)
