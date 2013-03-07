@@ -88,7 +88,7 @@ class RedactorEditor(Textarea):
             js += ('django-redactor/redactor/langs/%s.js' % self.redactor_settings['lang'],)
         css = {
             'screen': [
-                'redactor/redactor/redactor.css',s
+                'redactor/redactor/redactor.css',
             ]
         }
         return Media(css=css, js=js)
@@ -130,13 +130,11 @@ class AdminRedactorEditorEx(AdminRedactorEditor):
         REDACTOR_IMAGE_UPLOAD = getattr(settings, "REDACTOR_IMAGE_UPLOAD", reverse('redactor-upload-image'))
         REDACTOR_FILE_UPLOAD = getattr(settings, "REDACTOR_FILE_UPLOAD", reverse('redactor-upload-file'))
         REDACTOR_IMAGE_GET_JSON = getattr(settings, "REDACTOR_IMAGE_GET_JSON", reverse('redactor-get-json'))
-        REDACTOR_DIRS_GET_JSON = getattr(settings, "REDACTOR_DIRS_GET_JSON", reverse('redactor-get-folders'))
         REDACTOR_LANG = getattr(settings, "REDACTOR_LANG", "ru")
         params_settings = dict(
             imageUpload=REDACTOR_IMAGE_UPLOAD,
             fileUpload=REDACTOR_FILE_UPLOAD,
             imageGetJson=REDACTOR_IMAGE_GET_JSON,
-            dirsGetJson=REDACTOR_DIRS_GET_JSON,
             lang=REDACTOR_LANG
         )
         if redactor_settings:

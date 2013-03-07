@@ -33,10 +33,10 @@ label.redactor_label {
     width: 128px;
     height: 128px;
     text-align: center;
+    float: left;
 }
 .redactor_folder_text{
     position: relative;
     top: 50%;
     font-size: 16px;
-
 }

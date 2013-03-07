@@ -70,15 +70,3 @@ def get_json_images(request):
     root = root.replace("..", "")
     root = root[1:] if root.startswith("/") else root
     return [meta for meta in get_image_files(root)]
-
-
-@login_required
-@json_response
-def get_folders(request):
-    """
-    Get list of folders in {request.folder} folder
-    :param request: HTTP request
-    :return: json data in python dict
-    """
-    root = get_relpath_or_404(request.GET.get("folder", ""))
-    return get_image_folders(root)

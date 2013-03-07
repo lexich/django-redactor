@@ -16,9 +16,4 @@ urlpatterns = patterns(
     url(r'^getjson',
         views.get_json_images,
         name="redactor-get-json"),
-
-    url(r'^getfolders',
-        views.get_folders,
-        name='redactor-get-folders'
-        )
 )
