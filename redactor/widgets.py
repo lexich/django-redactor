@@ -148,5 +148,4 @@ class AdminRedactorEditorEx(AdminRedactorEditor):
         media = super(AdminRedactorEditorEx, self).media
         if REDACTOR_CSS:
             media._css["screen"].append(REDACTOR_CSS)
-        print(media)
         return media
